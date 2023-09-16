@@ -113,80 +113,38 @@ draw = ImageDraw.Draw(img)
 
 # Load the fonts
 
-font_size = 16
 
+font_size = 16
 author_font = ImageFont.truetype(SourceSerifProSemibold, font_size)
 quote_font = ImageFont.truetype(SourceSansProSemibold, font_size)
+screen_padding = 10
+listing_padding = 4
+day_row_width = author_font.getlength('Thu 000')
 
-# The amount of padding around the quote. Note that
-# a value of 30 means 15 pixels padding left and 15
-# pixels padding right.
-#
-# Also define the max width and height for the quote.
+last_date = None
+for index, event in enumerate(bjEvents):
+    draw_height_for_this_event = screen_padding + index * (font_size + listing_padding)
 
-padding = 50
-max_width = WIDTH - padding
-max_height = HEIGHT - padding - author_font.size
-
-below_max_length = False
-
-# Only pick an event that will fit in our defined area
-# once rendered in the font and size defined.
-
-eventIndex = 2
-eventDate = 'test'
-
-while not below_max_length:
-    event = random.choice(bjEvents)
     subject = event['subject']
-    eventDate = event['start']['dateTime']
-
-    reflowed = reflow_quote(subject, max_width, quote_font)
-    left, top, right, bottom = quote_font.getmask(reflowed).getbbox()  # Width and height of quote
-    p_h = bottom - top
-    p_h = p_h * (reflowed.count("\n") + 1)  # Multiply through by number of lines
-
-    if p_h < max_height:
-        below_max_length = True  # The quote fits! Break out of the loop.
-
+    is_all_day = event['isAllDay']
+    startTime = event['start']['dateTime']
+    startTime = startTime[:19]
+    dt = datetime.fromisoformat(startTime)
+    day_of_the_week = dt.strftime('%a %d')
+    if last_date == day_of_the_week:
+        draw.rectangle(
+            (screen_padding + day_row_width - 10, draw_height_for_this_event + listing_padding, screen_padding + day_row_width - 9, draw_height_for_this_event + font_size),
+            fill=BLACK)
     else:
-        eventIndex = eventIndex + 1
-        continue
+        draw.text((screen_padding + day_row_width - 10, draw_height_for_this_event), day_of_the_week, fill=BLACK, font=quote_font,
+                            align="right", anchor="ra")
+    last_date = day_of_the_week
 
-# x- and y-coordinates for the top left of the quote
+    if not is_all_day:
+        subject = '{time} - {subject}'.format(time=dt.strftime('%H:%M') ,subject=subject)
 
-quote_x = (WIDTH - max_width) / 2
-quote_y = ((HEIGHT - max_height) + (max_height - p_h - author_font.getbbox("ABCD ")[3])) / 2
+    draw.multiline_text((screen_padding + day_row_width, draw_height_for_this_event), subject, fill=BLACK, font=quote_font, align="left")
 
-# x- and y-coordinates for the top left of the author
-
-author_x = quote_x
-author_y = quote_y + p_h
-
-author = "- " + eventDate
-
-# Draw red rectangles top and bottom to frame quote
-#
-draw.rectangle(
-    (
-        padding / 4,
-        padding / 4,
-        WIDTH - (padding / 4),
-        quote_y - (padding / 4)
-    ), fill=YELLOW)
-#
-draw.rectangle(
-    (
-        padding / 4,
-        author_y + author_font.getbbox("ABCD ")[3] + (padding / 4) + 5,
-        WIDTH - (padding / 4),
-        HEIGHT - (padding / 4)
-    ), fill=YELLOW)
-
-draw.multiline_text((quote_x, quote_y), reflowed, fill=BLACK, font=quote_font, align="left")
-draw.multiline_text((author_x, author_y), author, fill=YELLOW, font=author_font, align="left")
-
-print(reflowed + "\n" + author + "\n")
 
 if platform == "win32":
     img.save("mock-inky-output.png")
