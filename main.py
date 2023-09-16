@@ -3,12 +3,11 @@
 
 import random
 import os
+from sys import platform
 from datetime import datetime, timedelta
 import requests
 import os
 import atexit
-
-from inky.auto import auto
 
 from PIL import Image, ImageFont, ImageDraw
 from font_source_serif_pro import SourceSerifProSemibold
@@ -75,19 +74,6 @@ print('Number of events loaded {}'.format(numberOfEventsToShow))
 
 print("Inky wHAT render script")
 
-# Set up the correct display and scaling factors
-
-inky_display = auto(ask_user=True, verbose=True)
-inky_display.set_border(inky_display.WHITE)
-
-
-# inky_display.set_rotation(180)
-
-# This function will take a quote as a string, a width to fit
-# it into, and a font (one that's been loaded) and then reflow
-# that quote with newlines to fit into the space required.
-
-
 def reflow_quote(quote, width, font):
     words = quote.split(" ")
     reflowed = '"'
@@ -108,18 +94,26 @@ def reflow_quote(quote, width, font):
 
     return reflowed
 
+WIDTH = 400
+HEIGHT = 300
 
-WIDTH = inky_display.width
-HEIGHT = inky_display.height
+if platform == "win32":
+    YELLOW = (207, 190, 71)
+    WHITE = (255, 255, 255)
+    BLACK = (57, 48, 57)
+else:
+    YELLOW = 2
+    WHITE = 0
+    BLACK = 1
 
 # Create a new canvas to draw on
 
-img = Image.new("P", (WIDTH, HEIGHT))
+img = Image.new("P", (WIDTH, HEIGHT), WHITE)
 draw = ImageDraw.Draw(img)
 
 # Load the fonts
 
-font_size = 24
+font_size = 16
 
 author_font = ImageFont.truetype(SourceSerifProSemibold, font_size)
 quote_font = ImageFont.truetype(SourceSansProSemibold, font_size)
@@ -148,7 +142,8 @@ while not below_max_length:
     eventDate = event['start']['dateTime']
 
     reflowed = reflow_quote(subject, max_width, quote_font)
-    p_w, p_h = quote_font.getsize(reflowed)  # Width and height of quote
+    left, top, right, bottom = quote_font.getmask(reflowed).getbbox()  # Width and height of quote
+    p_h = bottom - top
     p_h = p_h * (reflowed.count("\n") + 1)  # Multiply through by number of lines
 
     if p_h < max_height:
@@ -161,7 +156,7 @@ while not below_max_length:
 # x- and y-coordinates for the top left of the quote
 
 quote_x = (WIDTH - max_width) / 2
-quote_y = ((HEIGHT - max_height) + (max_height - p_h - author_font.getsize("ABCD ")[1])) / 2
+quote_y = ((HEIGHT - max_height) + (max_height - p_h - author_font.getbbox("ABCD ")[3])) / 2
 
 # x- and y-coordinates for the top left of the author
 
@@ -171,39 +166,36 @@ author_y = quote_y + p_h
 author = "- " + eventDate
 
 # Draw red rectangles top and bottom to frame quote
-
+#
 draw.rectangle(
     (
         padding / 4,
         padding / 4,
         WIDTH - (padding / 4),
         quote_y - (padding / 4)
-    ), fill=inky_display.RED)
-
+    ), fill=YELLOW)
+#
 draw.rectangle(
     (
         padding / 4,
-        author_y + author_font.getsize("ABCD ")[1] + (padding / 4) + 5,
+        author_y + author_font.getbbox("ABCD ")[3] + (padding / 4) + 5,
         WIDTH - (padding / 4),
         HEIGHT - (padding / 4)
-    ), fill=inky_display.RED)
+    ), fill=YELLOW)
 
-# Add some white hatching to the red rectangles to make
-# it look a bit more interesting
-
-hatch_spacing = 12
-
-for x in range(0, 2 * WIDTH, hatch_spacing):
-    draw.line((x, 0, x - WIDTH, HEIGHT), fill=inky_display.WHITE, width=3)
-
-# Write our quote and author to the canvas
-
-draw.multiline_text((quote_x, quote_y), reflowed, fill=inky_display.BLACK, font=quote_font, align="left")
-draw.multiline_text((author_x, author_y), author, fill=inky_display.RED, font=author_font, align="left")
+draw.multiline_text((quote_x, quote_y), reflowed, fill=BLACK, font=quote_font, align="left")
+draw.multiline_text((author_x, author_y), author, fill=YELLOW, font=author_font, align="left")
 
 print(reflowed + "\n" + author + "\n")
 
-# Display the completed canvas on Inky wHAT
+if platform == "win32":
+    img.save("mock-inky-output.png")
+else:
+    from inky.auto import auto
+    inky_display = auto(ask_user=True, verbose=True)
+    inky_display.set_border(inky_display.WHITE)
 
-inky_display.set_image(img)
-inky_display.show()
+    # inky_display.set_rotation(180)
+
+    inky_display.set_image(img)
+    inky_display.show()
