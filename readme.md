@@ -28,3 +28,29 @@ To get the pin connections to work from python we needed to install the `RPi.GPI
 App registration was done via the azure [portal](https://portal.azure.com/).
 To be able to read calendar info you need to assign the `Microsoft Graph - Calendars.Read` API permissions to your app.
 You then need to set your azure application ID to the `APP_ID` python environment variable.
+
+# Running Python script on a schedule on Pi
+
+To set the job to run on a regular cadence we set up the following cron script on the PI unix OS.
+As this script uses some setup from env variables etc, we setup a `.sh` script on the server to run through those pre-requisites. 
+
+Below are the steps to run the script every 20 mins. 
+
+```
+// crontab -e
+*/20 * * * * [path-to-sh] 1>/dev/null 2>[path-for-cron-err-log]
+```
+
+To enable cron debug logging we had to comment out the cron line in the rsyslog.conf file.
+
+```
+open /etc/rsyslog.conf
+service rsyslog restart
+service cron restart
+```
+
+We also had to ensure our `.sh` script had no access permissions.
+
+```
+chmod +x [path-to-sh]
+```
