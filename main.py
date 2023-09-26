@@ -5,6 +5,7 @@ import random
 import os
 from sys import platform
 from datetime import datetime, timedelta
+from dateutil import tz
 import requests
 import os
 import atexit
@@ -12,7 +13,6 @@ import numpy as np
 
 from PIL import Image, ImageFont, ImageDraw
 from font_source_serif_pro import SourceSerifProSemibold
-from font_source_sans_pro import SourceSansProSemibold
 
 import msal
 
@@ -138,6 +138,8 @@ for index, event in enumerate(bjEvents):
     startTime = event['start']['dateTime']
     startTime = startTime[:19]
     dt = datetime.fromisoformat(startTime)
+    dt = dt.replace(tzinfo=tz.gettz('UTC'))
+    dt = dt.astimezone(tz.gettz('Europe/London'))
     if dt.date() == datetime.now().date():
         day_fill = YELLOW
         day_of_the_week = 'Today'
