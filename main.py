@@ -152,9 +152,10 @@ for index, event in enumerate(bjEvents):
                 int(draw_height_for_this_event + bottom)
             ),
             fill=YELLOW)
-        draw.text((screen_padding + day_row_width - screen_padding, draw_height_for_this_event), day_of_the_week,
-                  fill=BLACK, font=primary_font,
-                  align="right", anchor="ra")
+        if last_date != day_of_the_week:
+            draw.text((screen_padding + day_row_width - screen_padding, draw_height_for_this_event), day_of_the_week,
+                      fill=BLACK, font=primary_font,
+                      align="right", anchor="ra")
     else:
         day_of_the_week = dt.strftime('%a %d')
         day_fill = BLACK
