@@ -61,7 +61,7 @@ calendarsResponse = requests.get('{base_url}me/calendars?$select=name'.format(ba
 bjCalendarId = calendarsResponse.json()['value'][1]['id']
 fyiCalendarId = calendarsResponse.json()['value'][2]['id']
 
-today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+today = datetime.now().replace(hour=0, minute=1, second=0, microsecond=0)
 monthLater = (today + timedelta(days=30))
 
 calendarViewUrl = '{base_url}me/calendars/{calendar_id}/calendarView?$top=100&$select=subject,body,start,end,isAllDay,isCancelled,location&$orderby=start/dateTime&startdatetime={start_date_iso}&enddatetime={end_date_iso}'.format(base_url=MS_GRAPH_URL, calendar_id=bjCalendarId, start_date_iso=today.isoformat(), end_date_iso=monthLater.isoformat())
